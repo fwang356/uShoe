@@ -239,7 +239,7 @@ def adidas_scraper():
                   'skateboarding', 'training', 'baseball', 'cycling']
     genders = ['men', 'women']
 
-    selected_types = ['running']
+    selected_types = ['lifestyle', 'running']
     selected_gender = "men"
     urls = []
     for style in selected_types:
@@ -258,6 +258,8 @@ def adidas_scraper():
         time.sleep(3)
 
         page = driver.page_source
+        driver.close()
+
         soup = BeautifulSoup(page, 'html.parser')
         search = soup.find_all('div', class_='gl-product-card__assets')
         for result in search:
@@ -265,7 +267,40 @@ def adidas_scraper():
                 "product_link": result.a['href'],
                 "img_link": result.a.img['src']
             }
-            images.append(links)
-        print(images)
-        
-adidas_scraper()
+            if 'https://' in links['img_link']:
+                images.append(links)
+
+    return images
+
+
+def recs(metadata, images, brand):
+    for img in images:
+        sum = 0
+        prediction = predict(metadata, img['img_link']).concepts
+        for concept in prediction:
+            sum = sum + concept.value
+        if sum > 0.5:
+            info = {
+                "product_link": img['product_link'],
+                "img_link": img['img_link'],
+                "value": sum
+            }
+            brand.append(info)
+    sort = sorted(brand, reverse=True, key= lambda k: k['value'])
+
+    return sort[0:5]
+
+
+def main(metadata):
+    nike_images = nike_scraper()
+    adidas_images = adidas_scraper()
+    
+    nike_list = []
+    adidas_list = []
+    
+    nike = recs(metadata, nike_images, nike_list)
+    adidas = recs(metadata, adidas_images, adidas_list)
+
+    # TODO: email this stuff and rerun every week or so
+
+main(metadata)
