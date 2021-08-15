@@ -3,6 +3,8 @@ from clarifai_grpc.grpc.api import resources_pb2, service_pb2, service_pb2_grpc
 from clarifai_grpc.grpc.api.status import status_pb2, status_code_pb2
 import os
 from glob import glob
+import requests
+from bs4 import BeautifulSoup
 
 channel = ClarifaiChannel.get_grpc_channel()
 stub = service_pb2_grpc.V2Stub(channel)
@@ -153,11 +155,75 @@ def predict(metadata, url):
     return output
 
 
-"""
+
 def nike_scraper():
-    # Stuff
+    shoe_types = ['lifestyle', 'jordan', 'running', 'basketball', 'training-gym'
+                  'soccer', 'skateboarding', 'football', 'baseball', 'golf', 'tennis',
+                  'track-field', 'walking']
+    mens_shoe_types = ['lifestyle', 'jordan', 'running', 'basketball', 'training-gym',
+                       'soccer', 'skateboarding', 'football', 'baseball', 'golf', 'tennis',
+                       'track-field', 'walking', 'sandals-slides']
+    womens_shoe_types = ['lifestyle', 'running', 'basketball', 'soccer', 'training-gym',
+                         'jordan', 'skateboarding', 'softball', 'golf', 'tennis', 'track-field',
+                         'volleyball', 'cheerleading', 'walking', 'sandals-slides']
+    unisex_shoe_types = ['lifestyle', 'running', 'basketball', 'training-gym',
+                         'soccer', 'skateboarding', 'baseball', 'golf', 'track-field']
+    genders = ['mens', 'womens', 'unisex']
+    
+    selected_types = ['lifestyle']
+    selected_gender = 'mens'
+    message = "Selected types unavailable for selected gender"
+    if selected_gender == '':
+        for shoe_type in selected_types:
+            if not shoe_type in shoe_types:
+                return message
+        url = 'https://www.nike.com/w/new-shoes-3n82yzy7ok'
+    if selected_gender == 'mens':
+        for shoe_type in selected_types:
+            if not shoe_type in mens_shoe_types:
+                return message
+        url = 'https://www.nike.com/w/new-mens-shoes-3n82yznik1zy7ok'
+    elif selected_gender == 'womens':
+        for shoe_type in selected_types:
+            if not shoe_type in womens_shoe_types:
+                return message
+        url = 'https://www.nike.com/w/new-womens-shoes-3n82yz5e1x6zy7ok'
+    elif selected_gender == 'unisex':
+        for shoe_type in selected_types:
+            if not shoe_type in unisex_shoe_types:
+                return message
+        url = 'https://www.nike.com/w/new-unisex-shoes-3n82yz3rauvzy7ok'
+    else:
+        return "Selected gender is invalid"
+        
+    images = []
+    if len(selected_types) == 0:
+        page = requests.get(url, headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62'})
+        soup = BeautifulSoup(page.content, 'html.parser')
+        search = soup.find_all('a', class_='product-card__img-link-overlay')
+        for result in search:
+            img_link = result.div.div.noscript.img['src']
+            images.append(img_link)
 
+    else:
+        for style in selected_types:
+            page = requests.get(url, headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62'})
+            soup = BeautifulSoup(page.content, 'html.parser')
+            search = soup.find_all('a', class_='css-hrsjq4 css-xhk1pl css-1t2ydyg categories__item is--link')
+            for result in search:
+                if style in result['href']:
+                    url = result['href']
+                    break
 
-def adidas_scraper():
+            page = requests.get(url, headers={'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36 Edg/92.0.902.62'})
+            soup = BeautifulSoup(page.content, 'html.parser')
+            search = soup.find_all('a', class_='product-card__img-link-overlay')
+            for result in search:
+                img_link = result.div.div.noscript.img['src']
+                images.append(img_link)
+
+    return images
+            
+
+# def adidas_scraper():
     # Stuff
-"""
