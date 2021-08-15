@@ -5,6 +5,9 @@ import os
 from glob import glob
 import requests
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+import time
 
 channel = ClarifaiChannel.get_grpc_channel()
 stub = service_pb2_grpc.V2Stub(channel)
@@ -170,29 +173,29 @@ def nike_scraper():
                          'soccer', 'skateboarding', 'baseball', 'golf', 'track-field']
     genders = ['mens', 'womens', 'unisex']
     
-    selected_types = ['lifestyle']
+    selected_types = ['lifestyle', 'running']
     selected_gender = 'mens'
     message = "Selected types unavailable for selected gender"
     if selected_gender == '':
         for shoe_type in selected_types:
             if not shoe_type in shoe_types:
                 return message
-        url = 'https://www.nike.com/w/new-shoes-3n82yzy7ok'
+        url = 'https://www.nike.com/w/new-shoes-3n82yzy7ok?sort=newest'
     if selected_gender == 'mens':
         for shoe_type in selected_types:
             if not shoe_type in mens_shoe_types:
                 return message
-        url = 'https://www.nike.com/w/new-mens-shoes-3n82yznik1zy7ok'
+        url = 'https://www.nike.com/w/new-mens-shoes-3n82yznik1zy7ok?sort=newest'
     elif selected_gender == 'womens':
         for shoe_type in selected_types:
             if not shoe_type in womens_shoe_types:
                 return message
-        url = 'https://www.nike.com/w/new-womens-shoes-3n82yz5e1x6zy7ok'
+        url = 'https://www.nike.com/w/new-womens-shoes-3n82yz5e1x6zy7ok?sort=newest'
     elif selected_gender == 'unisex':
         for shoe_type in selected_types:
             if not shoe_type in unisex_shoe_types:
                 return message
-        url = 'https://www.nike.com/w/new-unisex-shoes-3n82yz3rauvzy7ok'
+        url = 'https://www.nike.com/w/new-unisex-shoes-3n82yz3rauvzy7ok?sort=newest'
     else:
         return "Selected gender is invalid"
         
@@ -202,8 +205,11 @@ def nike_scraper():
         soup = BeautifulSoup(page.content, 'html.parser')
         search = soup.find_all('a', class_='product-card__img-link-overlay')
         for result in search:
-            img_link = result.div.div.noscript.img['src']
-            images.append(img_link)
+            links = {
+                    "product_link": result['href'],
+                    'img_link': result.div.div.noscript.img['src']
+                }
+            images.append(links)
 
     else:
         for style in selected_types:
@@ -219,11 +225,47 @@ def nike_scraper():
             soup = BeautifulSoup(page.content, 'html.parser')
             search = soup.find_all('a', class_='product-card__img-link-overlay')
             for result in search:
-                img_link = result.div.div.noscript.img['src']
-                images.append(img_link)
+                links = {
+                    "product_link": result['href'],
+                    'img_link': result.div.div.noscript.img['src']
+                }
+                images.append(links)
 
     return images
             
 
-# def adidas_scraper():
-    # Stuff
+def adidas_scraper():
+    shoe_types = ['lifestyle', 'running', 'basketball', 'tennis', 'soccer',
+                  'skateboarding', 'training', 'baseball', 'cycling']
+    genders = ['men', 'women']
+
+    selected_types = ['running']
+    selected_gender = "men"
+    urls = []
+    for style in selected_types:
+        url = 'https://www.adidas.com/us/' + selected_gender + '-' + style + '-athletic_sneakers-new_arrivals?sort=newest-to-oldest'
+        urls.append(url)
+    if len(urls) == 0:
+        url = 'https://www.adidas.com/us/' + selected_gender + '-athletic_sneakers-new_arrivals?sort=newest-to-oldest'
+        urls.append(url)
+    
+    images = []
+    for url in urls:
+        driver = webdriver.Chrome('./chromedriver')
+        driver.get(url)
+        ele = driver.find_element_by_tag_name('body')
+        ele.send_keys(Keys.END)
+        time.sleep(3)
+
+        page = driver.page_source
+        soup = BeautifulSoup(page, 'html.parser')
+        search = soup.find_all('div', class_='gl-product-card__assets')
+        for result in search:
+            links = {
+                "product_link": result.a['href'],
+                "img_link": result.a.img['src']
+            }
+            images.append(links)
+        print(images)
+        
+adidas_scraper()
