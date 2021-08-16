@@ -20,6 +20,7 @@ model_id = 'ushoe'
 # Replace concepts with those of your favorite shoes.
 concepts = ['epic', 'nmd', 'presto', 'ultraboost']
 
+# Create the model.
 def model(metadata):
     post_models_response = stub.PostModels(
         service_pb2.PostModelsRequest(
@@ -49,6 +50,7 @@ def model(metadata):
         raise Exception("Post models failed, status: " + post_models_response.status.description)
 
 
+# Assign training images.
 def inputs(metadata):
     inputs = get_input(concepts)
     post_inputs_response = stub.PostInputs(
@@ -68,6 +70,7 @@ def inputs(metadata):
     print(post_inputs_response)
         
 
+# Create input from images.
 def get_input(concepts):
     inputs = []
     for concept in concepts:
@@ -116,6 +119,7 @@ def get_input(concepts):
     return inputs
 
 
+# Get file path of training images.
 def file_path(img_path):
     file_paths = []
     # Edit your code to match your file types.
@@ -125,6 +129,7 @@ def file_path(img_path):
     return file_paths
 
 
+# Train the model.
 def train(metadata):
     post_model_versions = stub.PostModelVersions(
         service_pb2.PostModelVersionsRequest(
@@ -140,6 +145,7 @@ def train(metadata):
 
     
 
+# Predict from image url.
 def predict(metadata, url):
     post_model_outputs_response = stub.PostModelOutputs(
         service_pb2.PostModelOutputsRequest(
@@ -163,7 +169,7 @@ def predict(metadata, url):
     return output
 
 
-
+# Scrapes nike new arrivals.
 def nike_scraper():
     shoe_types = ['lifestyle', 'jordan', 'running', 'basketball', 'training-gym'
                   'soccer', 'skateboarding', 'football', 'baseball', 'golf', 'tennis',
@@ -240,6 +246,7 @@ def nike_scraper():
     return images
             
 
+# Scrapes adidas new arrivals.
 def adidas_scraper():
     shoe_types = ['lifestyle', 'running', 'basketball', 'tennis', 'soccer',
                   'skateboarding', 'training', 'baseball', 'cycling']
@@ -283,6 +290,7 @@ def adidas_scraper():
     return images
 
 
+# Return the top recommended shoes.
 def recs(metadata, images, brand):
     for img in images:
         sum = 0
@@ -301,6 +309,7 @@ def recs(metadata, images, brand):
     return sort[0:5]
 
 
+# Sends email of the urls for the shoes.
 def email(urls):
     # Enter your email and password here
     sender_email = ""
@@ -337,7 +346,6 @@ def email(urls):
     server.quit
 
 
-
 def main(metadata):
     nike_images = nike_scraper()
     adidas_images = adidas_scraper()
@@ -352,11 +360,8 @@ def main(metadata):
     email(shoes)
 
 
-# Add training images.
 inputs(metadata)
-# Create your model.
 model(metadata)
-# Train model on your images.
 train(metadata)
 
-main(metadata)
+# main(metadata)
