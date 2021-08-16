@@ -7,21 +7,25 @@ import requests
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
+import smtplib
+import ssl
+from email.message import EmailMessage
 import time
 
 channel = ClarifaiChannel.get_grpc_channel()
 stub = service_pb2_grpc.V2Stub(channel)
-metadata = (('authorization', 'Key 9daae19231d24425a64a2fb53493975a'),)
+metadata = (('authorization', 'Key 2188b401cc3d456da4d646ec70a30316'),)
+# Change model_id with desired id for your new model.
 model_id = 'ushoe'
+# Replace concepts with those of your favorite shoes.
 concepts = ['epic', 'nmd', 'presto', 'ultraboost']
-
 
 def model(metadata):
     post_models_response = stub.PostModels(
         service_pb2.PostModelsRequest(
             models=[
                 resources_pb2.Model(
-                    id="ushoe",
+                    id=model_id,
                     output_info=resources_pb2.OutputInfo(
                         data=resources_pb2.Data(
                             concepts=[resources_pb2.Concept(id="epic", value=1),
@@ -114,6 +118,7 @@ def get_input(concepts):
 
 def file_path(img_path):
     file_paths = []
+    # Edit your code to match your file types.
     for file_path in glob(os.path.join(img_path, '*.png')):
         file_paths.append(file_path)
 
@@ -173,6 +178,7 @@ def nike_scraper():
                          'soccer', 'skateboarding', 'baseball', 'golf', 'track-field']
     genders = ['mens', 'womens', 'unisex']
     
+    # Edit desired shoe types and gender.
     selected_types = ['lifestyle', 'running']
     selected_gender = 'mens'
     message = "Selected types unavailable for selected gender"
@@ -239,6 +245,7 @@ def adidas_scraper():
                   'skateboarding', 'training', 'baseball', 'cycling']
     genders = ['men', 'women']
 
+    # Edit desired shoe types and gender.
     selected_types = ['lifestyle', 'running']
     selected_gender = "men"
     urls = []
@@ -263,8 +270,11 @@ def adidas_scraper():
         soup = BeautifulSoup(page, 'html.parser')
         search = soup.find_all('div', class_='gl-product-card__assets')
         for result in search:
+            product_link = result.a['href']
+            if not 'https://' in product_link:
+                product_link = "https://www.adidas.com" + product_link
             links = {
-                "product_link": result.a['href'],
+                "product_link": product_link,
                 "img_link": result.a.img['src']
             }
             if 'https://' in links['img_link']:
@@ -291,6 +301,43 @@ def recs(metadata, images, brand):
     return sort[0:5]
 
 
+def email(urls):
+    # Enter your email and password here
+    sender_email = ""
+    password = ""
+    context = ssl.create_default_context()
+
+    try:
+        server = smtplib.SMTP("smtp.gmail.com", 587)
+        server.starttls(context=context)
+        server.login(sender_email, password)
+    except Exception as e:
+        print(e)
+
+    message = "Nike: \n \n"
+    count = 0
+    empty = True
+    for url in urls:
+        if len(url) > 0:
+            empty = False
+        for links in url:
+            message = message + links['product_link'] + '\n'
+        message = message + '\n'
+        if count == 0:
+            message = message + 'Adidas: \n \n'
+            count = count + 1
+    if empty:
+        message = "No recommended shoes found :("
+    msg = EmailMessage()
+    msg.set_content(message)
+    msg['Subject'] = 'Shoes you might like.'
+    msg['From'] = sender_email
+    msg['To'] = sender_email
+    server.send_message(msg)
+    server.quit
+
+
+
 def main(metadata):
     nike_images = nike_scraper()
     adidas_images = adidas_scraper()
@@ -300,7 +347,21 @@ def main(metadata):
     
     nike = recs(metadata, nike_images, nike_list)
     adidas = recs(metadata, adidas_images, adidas_list)
+    shoes = [nike, adidas]
 
-    # TODO: email this stuff and rerun every week or so
+    email(shoes)
 
-main(metadata)
+
+# Add training images.
+inputs(metadata)
+# Create your model.
+model(metadata)
+# Train model on your images.
+train(metadata)
+
+# If running locally, uncomment the next line and comment out lines 352-355.
+# main(metadata)
+while True:
+    main(metadata)
+    # Run once a week
+    time.sleep(604800)
