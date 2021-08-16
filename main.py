@@ -359,9 +359,4 @@ model(metadata)
 # Train model on your images.
 train(metadata)
 
-# If running locally, uncomment the next line and comment out lines 352-355.
-# main(metadata)
-while True:
-    main(metadata)
-    # Run once a week
-    time.sleep(604800)
+main(metadata)
