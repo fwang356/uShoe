@@ -8,7 +8,7 @@ git clone https://github.com/fwang356/uShoe.git
 ```
 Create a virtual environment:
 ```
-virtualenv venv
+python -m virtualenv venv
 ```
 Activate the environment:
 ```
